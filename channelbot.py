@@ -15,6 +15,9 @@ class WPChannelBot():
 		self.simple_steps = True
 		self.log_file = None
 
+		self.cmd_wait_from = None
+		self.cmd_wait = False
+
 		self.profile = "profile"
 		self.driver = None
 
@@ -143,14 +146,60 @@ class WPChannelBot():
 						self._to_log("Finalizado cadastro: %s - %s" % (id, content))
 
 
+	def _is_cmd(self, content):
+		if content[:4] == "/cmd":
+			return True
+		else:
+			return False
+
+	def _run_cmd(self, content, chat):
+		cmd = content[5:]
+
+		if cmd == "usuarios":
+			self._cmd_usuarios(chat)
+		elif cmd == "envio":
+			self.cmd_wait = True
+			self.cmd_wait_from = chat.id
+			chat.send_message("*ENVIE A SEGUIR A MENSAGEM A SER ENVIADA PARA O CANAL*")
+		else:
+			chat.send_message("*COMANDO NÃO RECONHECIDO*")
+
+	def _cmd_usuarios(self, chat):
+		response = "*USUÁRIOS CADASTRADOS*\n\n"
+
+		i = 0
+		users = self.model.get_all()
+		for user in users:
+			i += 1
+			response += "\n%d) %s - %s" % (i, user['id'], user['nome'])
+
+		chat.send_message(response)
+
+	def _cmd_envio(self, content, chat):
+		i = 0
+		users = self.model.get_all()
+		for user in users:
+			i += 1
+			self.driver.send_message_to_id(user['id'], content)
+
+		self.cmd_wait_from = None
+		self.cmd_wait = False
+		chat.send_message("*MENSAGEM ENVIADA PARA %d USUÁRIOS DO CANAL*" % i)
+
 
 	def new_message(self, message, contact):
-		if not contact.chat.id in self.convs:		
-			self._proc_etapa(contact.chat.id, message, contact.chat, 2)
-		else:
-			for conv in self.convs_state:
-				if conv['id'] == contact.chat.id:
-					e = self._proc_etapa(contact.chat.id, message, contact.chat, conv['etapa'])
-					conv['etapa'] = e
+		if not self._is_cmd(message):
+			if self.cmd_wait and contact.chat.id == self.cmd_wait_from:
+				self._cmd_envio(message, contact.chat)
+				
+			elif not contact.chat.id in self.convs:		
+				self._proc_etapa(contact.chat.id, message, contact.chat, 2)
+			else:
+				for conv in self.convs_state:
+					if conv['id'] == contact.chat.id:
+						e = self._proc_etapa(contact.chat.id, message, contact.chat, conv['etapa'])
+						conv['etapa'] = e
 
-					self.model.conv_update(contact.chat.id, e)
+						self.model.conv_update(contact.chat.id, e)
+		else:
+			self._run_cmd(message, contact.chat)
