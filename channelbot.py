@@ -69,7 +69,9 @@ class WPChannelBot():
 
 	def _proc_etapa(self, id, content, chat, etapa):
 		if etapa == 2:
-			if content.lower() == CHANNEL_KEYWORD:
+			if isinstance(self.model.get(id), dict):
+				chat.send_message("Olá, você já está cadastrado neste canal. Assim que tiver novidade você vai receber!")
+			elif content.lower() == CHANNEL_KEYWORD:
 				# Efetua registros
 				self.convs.append(id)
 				self.convs_state.append({

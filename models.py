@@ -40,6 +40,7 @@ class WPChannelBotModel():
 	def get(self, id):
 		sql = ("SELECT id, nome, cidade, bairro FROM channel WHERE id = %s")
 		self.cursor.execute(sql, (id, ))
+		obj = False
 		for (id, nome, cidade, bairro) in self.cursor:
 			obj = {
 				"id": id,
