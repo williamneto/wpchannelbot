@@ -8,6 +8,11 @@ CREATE TABLE channel (
 	bairro varchar(300)
 );
 
+CREATE TABLE admins (
+	id varchar(30),
+	nome varchar(30)
+);
+
 CREATE TABLE convs (
 	id varchar(30)
 );

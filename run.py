@@ -1,14 +1,16 @@
 from channelbot import WPChannelBot
 import time
 
-from http.client import ResponseNotReady, CannotSendRequest
+from http.client import BadStatusLine, ResponseNotReady, CannotSendRequest
 from selenium.common.exceptions import WebDriverException
 from json.decoder import JSONDecodeError
+from selenium.common.exceptions import JavascriptException
+from webwhatsapi.wapi_js_wrapper import JsException
 
 while True:
+	bot = WPChannelBot()
 	try:
-		time.sleep(3)
-		bot = WPChannelBot()
 		bot.start()
-	except (ResponseNotReady, JSONDecodeError, CannotSendRequest, WebDriverException):
+	except (JavascriptException, JsException, ResponseNotReady, JSONDecodeError, CannotSendRequest, WebDriverException, BadStatusLine):
+		bot.shutdown()
 		continue

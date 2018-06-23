@@ -22,6 +22,34 @@ class WPChannelBotModel():
 
 		self.connection.commit()
 
+	def check_admin(self, id=None, all=False):
+		if all == False:
+			sql = ("SELECT id, nome FROM admins WHERE id = %s")
+			self.cursor.execute(sql, (id,))
+			obj = False
+			for (id, nome) in self.cursor:
+				obj = {
+					"id": id,
+					"nome": nome
+				}
+		else:
+			sql = ("SELECT id, nome FROM admins")
+			self.cursor.execute(sql)
+			obj = False
+			for (id, nome) in self.cursor:
+				obj = {
+					"id": id,
+					"nome": nome
+				}
+
+		return obj
+
+	def add_admin(self, id, nome):
+		sql = ("INSERT INTO admins (id, nome) VALUES (%s, %s)")
+		self.cursor.execute(sql, (id, nome))
+
+		self.connection.commit()
+
 	def update(self, id, nome="", cidade="", bairro=""):
 		if not nome == "":
 			sql = ("UPDATE channel SET nome = %s WHERE id = %s")

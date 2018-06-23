@@ -1,7 +1,0 @@
-selenium.common.exceptions.WebDriverException:
-
-http.client.CannotSendRequest:
-
-json.decoder.JSONDecodeError: erro no local storage
-
-http.client.ResponseNotReady: Idle

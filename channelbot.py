@@ -48,6 +48,12 @@ class WPChannelBot():
 						self.new_message(message.content, contact)
 						self.driver.chat_send_seen(contact.chat.id)
 						time.sleep(3)
+	
+	def shutdown(self):
+		print("Desconectando...")
+		self.driver.close()
+		time.sleep(3)
+		print("Desconectado")
 
 	def _to_log(self, log):
 		file = open(self.log_file, "a")
@@ -156,15 +162,24 @@ class WPChannelBot():
 
 	def _run_cmd(self, content, chat):
 		cmd = content[5:]
+		if not self.model.check_admin(chat.id) == False:
+			if cmd == "usuarios":
+				self._cmd_usuarios(chat)
+			elif cmd == "envio":
+				self.cmd_wait = True
+				self.cmd_wait_from = chat.id
+				chat.send_message("*ENVIE A SEGUIR A MENSAGEM A SER ENVIADA PARA O CANAL*")
+			else:
+				chat.send_message("*COMANDO NÃO RECONHECIDO*")
+		elif self.model.check_admin(id=None, all=True) == False and cmd[:5] == "admin":
+			print("Cadastrando novo admin")
+			self.model.add_admin(chat.id, content[11:])
 
-		if cmd == "usuarios":
-			self._cmd_usuarios(chat)
-		elif cmd == "envio":
-			self.cmd_wait = True
-			self.cmd_wait_from = chat.id
-			chat.send_message("*ENVIE A SEGUIR A MENSAGEM A SER ENVIADA PARA O CANAL*")
+			chat.send_message("*ADMINISTRADOR CADASTRADO*")
 		else:
-			chat.send_message("*COMANDO NÃO RECONHECIDO*")
+			chat.send_message(CHANNEL_ASK_KEYWORD)
+
+
 
 	def _cmd_usuarios(self, chat):
 		response = "*USUÁRIOS CADASTRADOS*\n\n"
