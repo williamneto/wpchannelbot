@@ -38,46 +38,59 @@ class WPChannelBot():
 		self.log_file = time.strftime("log/%Y-%m-%d&%Hh%Mm%Ss.log", time.gmtime())
 
 		while True:
-			time.sleep(3)
+			time.sleep(1)
 			for contact in self.driver.get_unread(include_me=False, include_notifications=True, use_unread_count=True):
-			#for contact in self.driver.get_unread():
-				for message in contact.messages:
+				if len(contact.messages) == 1:
+					for message in contact.messages:
+						if isinstance(message, Message):
+							self.new_message(message.content, contact)
+							self.driver.chat_send_seen(contact.chat.id)
+							time.sleep(3)
+				else:
+					contact.chat.send_message("Fico confuso com muitas mensagens :S Por favor, envie uma de cada vez e espere eu responder tá?")
+					contact.chat.send_message(CHANNEL_ASK_KEYWORD)
 
-					#import pdb;pdb.set_trace()
-					if isinstance(message, Message):
-						self.new_message(message.content, contact)
-						self.driver.chat_send_seen(contact.chat.id)
-						time.sleep(3)
-	
+	def new_message(self, message, contact):
+		if not self._is_cmd(message):
+			if self.cmd_wait and contact.chat.id == self.cmd_wait_from:
+				self._cmd_envio(message, contact.chat)
+				
+			elif not contact.chat.id in self.convs:		
+				self._proc_etapa(contact.chat.id, message, contact.chat, 2)
+			else:
+				for conv in self.convs_state:
+					if conv['id'] == contact.chat.id:
+						e = self._proc_etapa(contact.chat.id, message, contact.chat, conv['etapa'])
+						conv['etapa'] = e
+
+						self.model.conv_update(contact.chat.id, e)
+		else:
+			print("ADMINISTRADOR")
+			self._run_cmd(message, contact.chat)
+
 	def shutdown(self):
 		print("Desconectando...")
 		self.driver.close()
 		time.sleep(3)
 		print("Desconectado")
 
-	def _to_log(self, log):
-		file = open(self.log_file, "a")
-		file.write("\n>> %s " % log)
-		file.close()
-		return
+	def _already_user(self, id, chat):
+		if isinstance(self.model.get(id), dict):
+			chat.send_message("Olá, você já está cadastrado neste canal. Assim que tiver novidade você vai receber!")
+			return True
+		else:
+			return False
 
-	def _get_conv_nome(self, id):
-		for obj in self.data:
-			if obj["id"] == id:
-				return obj["nome"]
-
-	def _remove_convs(self, id):
-		self.convs.remove(id)
-		for conv in self.convs_state:
-			if conv["id"] == id:
-				self.convs_state.remove(conv)
-				self.model.conv_delete(id)
+	def _is_keyword(self, content, chat):
+		if content.lower() == CHANNEL_KEYWORD:
+			return True
+		else:
+			chat.send_message(CHANNEL_ASK_KEYWORD)
+			return False
 
 	def _proc_etapa(self, id, content, chat, etapa):
 		if etapa == 2:
-			if isinstance(self.model.get(id), dict):
-				chat.send_message("Olá, você já está cadastrado neste canal. Assim que tiver novidade você vai receber!")
-			elif content.lower() == CHANNEL_KEYWORD:
+			if not self._already_user(id, chat) and self._is_keyword(content, chat):
 				# Efetua registros
 				self.convs.append(id)
 				self.convs_state.append({
@@ -90,8 +103,6 @@ class WPChannelBot():
 				chat.send_message(CHANNEL_INTRO)
 				chat.send_message(CHANNEL_MSGS[0])
 				self._to_log("Iniciando cadastro: %s" % id)
-			else:
-				chat.send_message(CHANNEL_ASK_KEYWORD)
 
 		elif etapa == 4:
 			# Armazena nome - Solicita cidade
@@ -153,6 +164,23 @@ class WPChannelBot():
 						self._remove_convs(id)
 						self._to_log("Finalizado cadastro: %s - %s" % (id, content))
 
+	def _to_log(self, log):
+		file = open(self.log_file, "a")
+		file.write("\n>> %s " % log)
+		file.close()
+		return
+
+	def _get_conv_nome(self, id):
+		for obj in self.data:
+			if obj["id"] == id:
+				return obj["nome"]
+
+	def _remove_convs(self, id):
+		self.convs.remove(id)
+		for conv in self.convs_state:
+			if conv["id"] == id:
+				self.convs_state.remove(conv)
+				self.model.conv_delete(id)
 
 	def _is_cmd(self, content):
 		if content[:4] == "/cmd":
@@ -203,20 +231,3 @@ class WPChannelBot():
 		self.cmd_wait = False
 		chat.send_message("*MENSAGEM ENVIADA PARA %d USUÁRIOS DO CANAL*" % i)
 
-
-	def new_message(self, message, contact):
-		if not self._is_cmd(message):
-			if self.cmd_wait and contact.chat.id == self.cmd_wait_from:
-				self._cmd_envio(message, contact.chat)
-				
-			elif not contact.chat.id in self.convs:		
-				self._proc_etapa(contact.chat.id, message, contact.chat, 2)
-			else:
-				for conv in self.convs_state:
-					if conv['id'] == contact.chat.id:
-						e = self._proc_etapa(contact.chat.id, message, contact.chat, conv['etapa'])
-						conv['etapa'] = e
-
-						self.model.conv_update(contact.chat.id, e)
-		else:
-			self._run_cmd(message, contact.chat)
