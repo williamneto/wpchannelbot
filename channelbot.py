@@ -13,7 +13,7 @@ class WPChannelBot():
 		self.convs_state = self.model.get_convs_state()
 
 		self.simple_steps = True
-		self.log_file = None
+		self.log_file = "log/chatbot.log"
 
 		self.cmd_wait_from = None
 		self.cmd_wait = False
@@ -34,8 +34,6 @@ class WPChannelBot():
 
 		print("Bot iniciado")
 		self.driver.save_firefox_profile()
-
-		self.log_file = time.strftime("log/%Y-%m-%d&%Hh%Mm%Ss.log", time.gmtime())
 
 		while True:
 			time.sleep(1)

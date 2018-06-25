@@ -1,8 +1,8 @@
 import mysql.connector
 
 CONFIG = {
-  'user': 'root',
-  'password': 'will242697',
+  'user': '#####',
+  'password': '######',
   'host': '127.0.0.1',
   'database': 'wpchannelbot',
   'raise_on_warnings': True,

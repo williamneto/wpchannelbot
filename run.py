@@ -13,5 +13,6 @@ while True:
 	try:
 		bot.start()
 	except (LineTooLong, JavascriptException, JsException, ResponseNotReady, JSONDecodeError, CannotSendRequest, WebDriverException, BadStatusLine):
+		time.sleep(3)
 		bot.shutdown()
 		continue
